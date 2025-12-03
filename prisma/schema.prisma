@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed password
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  properties Property[]
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Appartement Paris 11"
+  address     String
+  type        String   // Apartment, House, Parking, etc.
+  size        Float    // in m2
+  rentAmount  Float    // Default rent amount
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  leases      Lease[]
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leases    Lease[]
+}
+
+model Lease {
+  id          String   @id @default(cuid())
+  startDate   DateTime
+  endDate     DateTime?
+  rentAmount  Float
+  charges     Float    @default(0)
+  deposit     Float    @default(0)
+  isActive    Boolean  @default(true)
+  
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  payments    Payment[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  date        DateTime
+  amount      Float
+  type        String   // RENT, DEPOSIT, REGULARIZATION
+  status      String   // PENDING, PAID, LATE
+  
+  leaseId     String
+  lease       Lease    @relation(fields: [leaseId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
